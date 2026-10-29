@@ -1,0 +1,5 @@
+{
+  "model": "gemini-3.5-flash-lite",
+  "max_model_calls": 3,
+  "max_tool_calls": 3
+}

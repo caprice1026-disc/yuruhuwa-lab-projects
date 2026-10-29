@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "source_repository": "https://github.com/caprice1026-disc/note-content-workbench",
+  "source_commit": "33bea9edd41cb31263287f56649873f0f4171cce",
+  "source_project_path": "articles/python-gemini-minimal-agent/code",
+  "verified_at_utc": "2026-10-27T15:29:02+00:00",
+  "model": "gemini-3.5-flash-lite",
+  "model_calls": 2,
+  "tool_calls": 2,
+  "elapsed_seconds": 6.36,
+  "saved": "task-list.md",
+  "sample_sha256": "d2b4bd58a2dd4c8a1324076e4c73a826dfaedbb3478cb20c0d46e7727e691146",
+  "input": "fictional candidates only",
+  "tier": "Free Tier confirmed by user at the time",
+  "billing_and_remaining_quota": "not independently verified",
+  "migration_live_api_test": "not rerun; original result retained"
+}

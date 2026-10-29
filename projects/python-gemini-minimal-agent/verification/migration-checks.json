@@ -1,0 +1,10 @@
+{
+  "checked_at_utc": "2026-10-27T19:19:51+00:00",
+  "python": "3.10.9",
+  "platform": "Windows",
+  "unit_test_count": 20,
+  "unit_test_exit_code": 0,
+  "mock": "previous migration invocation completed with 2 model calls, 2 tool calls and weekly-report.md saved",
+  "live_api_rerun": false,
+  "new_venv_dependency_install": "not executed"
+}
