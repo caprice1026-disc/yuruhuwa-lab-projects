@@ -19,7 +19,7 @@ ChatGPTやGeminiに文章を書いてもらったことがあれば、次は「�
 
 これは [保存した実モデルの出力](samples/live-output.md) の一部を短く示した例です。実行ごとに文章や選ばれる候補は変わります。入力は [架空の2候補](samples/candidates.json)。実在の顧客情報は使いません。
 
-> この教材は非公開リポジトリに保存しています。閲覧・取得にはアクセス権が必要です。一般公開はしていません。
+> 教材コードは公開リポジトリから取得できます。APIキーは同梱していないので、まずはキー不要のmockで試してください。
 
 ## 一緒に動かす
 
@@ -35,14 +35,14 @@ python --version
 
 `Python 3.10...` のように表示されれば次へ進めます。この作品はPython 3.10以降を前提にしています。見つからなければ [Python公式のWindows向け案内](https://www.python.org/downloads/windows/)を確認し、導入後にPowerShellを開き直してください。
 
-作品集にアクセスできることを確認してから、PCへ取得して開きます。Gitを使う場合は、保存したい親フォルダーで次を実行します。
+Gitを使う場合は、保存したい親フォルダーで次を実行します。既に取得したフォルダーがあれば、cloneを繰り返さずそのフォルダーを開きます。
 
 ```powershell
 git clone https://github.com/caprice1026-disc/yuruhuwa-lab-projects.git
 Set-Location yuruhuwa-lab-projects
 ```
 
-Gitを使わない場合は、GitHubのCodeメニューからZIPを取得して展開できます。
+Gitを使わない場合は、[作品集](https://github.com/caprice1026-disc/yuruhuwa-lab-projects)の緑色のCodeメニューからDownload ZIPを選び、取得したZIPを展開します。
 
 取得後は次のように対象フォルダーからPowerShellを開きます。
 
@@ -54,10 +54,10 @@ Gitを使わない場合は、GitHubのCodeメニューからZIPを取得して�
 Get-Location
 Set-Location projects/python-gemini-minimal-agent
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -X utf8 -m pip install -r requirements.txt
 ```
 
-`pip install` は必要なライブラリを取得する処理で、ネット接続が必要です。通信なしで試せるのは、導入後のmock実行です。
+`pip install` は必要なライブラリを取得する処理で、ネット接続が必要です。`-X utf8` はPythonに文字コードをUTF-8として扱わせる指定です。Windowsでの文字コードエラーを避けるため、ここでは明示しています。通信なしで試せるのは、導入後のmock実行です。
 
 `venv` は、この作品だけで使うPython環境を作る機能です。インストール先を分けられます。ここでは `.venv` 内のPythonを直接呼ぶため、Activate.ps1やPowerShellの実行ポリシー変更は不要です。
 
@@ -98,12 +98,12 @@ GEMINI_API_KEY=replace_me
 ```
 
 1. メモ帳の「名前を付けて保存」を開き、agent.pyがある作品フォルダーを選びます。
-2. 「ファイルの種類」を「すべてのファイル」にし、ファイル名を `.env`、文字コードをUTF-8にして保存します。
+2. 「ファイルの種類」を「すべてのファイル」にし、ファイル名を `.env`、文字コードをUTF-8（BOMなし）にして保存します。
 3. エクスプローラーで拡張子を表示し、名前が `.env` で、`.env.txt` になっていないことを確認します。`.env.txt` になった場合は、ファイル名を `.env` に直してから進めてください。
 
 APIキーはパスワードのように扱い、チャット、記事、Gitへ貼り付けないでください。ファイルが `.env.txt` になっていないかも確認します。既に別の場所に `.env` がある場合は、コピーせず、その絶対パスを実行時に指定しても使えます。
 
-このrepoは `.env` をGitから除外します。Gitで取得した場合は、内容を表示せずに次で確認できます。
+この教材は `--env-file` で指定した `.env` からキーを読みます。Windowsの環境変数を設定するだけでは読み込まず、別の `.env` を自動で探すこともありません。このrepoは `.env` をGitから除外します。Gitで取得した場合は、内容を表示せずに次で確認できます。
 
 ```powershell
 git check-ignore .env
@@ -116,7 +116,7 @@ git ls-files --error-unmatch .env 2>$null
 
 function callingは、モデルが使いたい関数と引数を返す仕組みです。関数は名前を付けてまとめた処理、引数はその処理へ渡す値です。実際の処理はPython側が確認してから実行します。
 
-`config.json` の `model` で使うモデルを選びます。確認時の選択肢は `gemini-3.5-flash-lite` と `gemini-3.1-flash-lite`。公式資料で無料枠とfunction calling対応を確認したモデルです。実APIで保存まで確認したのは3.5の方です。利用前に最新の提供条件を再確認してください。
+`config.json` の `model` で使うモデルを選びます。2026年10月31日に公式の料金表・モデル資料を再確認した選択肢は `gemini-3.5-flash-lite` と `gemini-3.1-flash-lite`。公式資料で無料枠とfunction calling対応を確認したモデルです。実APIで保存まで確認したのは3.5の方です。利用前に最新の提供条件を再確認してください。
 
 mockの出力が残っている場合は、先に読んでから別名へ退避します。同じ名前を上書きしないためです。
 
@@ -158,6 +158,7 @@ function callingは、モデルが「この関数を、この引数で呼びた�
 | 状況 | 確認するところ |
 | --- | --- |
 | Pythonが見つからない | Pythonの導入状態を確認し、PowerShellを開き直す |
+| `UnicodeDecodeError`（cp932） | 導入コマンドの `-X utf8` を省いていないか |
 | `ModuleNotFoundError` | `.venv` 内のPythonで依存を導入・実行しているか |
 | `.env`が見つからない | 今いるフォルダー、絶対パス、`.env.txt`になっていないか。中身は表示しない |
 | 同名ファイルがある | 保存済みの文章を読んで別名へ退避。上書きはしない |
@@ -176,4 +177,4 @@ function callingは、モデルが「この関数を、この引数で呼びた�
 
 20件のテストは通信せず、実キーも使いません。保存順序、上書き防止、不正な引数、呼出上限、エラー時の停止などを確かめます。実モデルの文章品質や無料請求は、単体テストだけでは確認できません。
 
-2026年10月27日の実API動作確認、その後の通信なしの確認、環境と未確認の範囲は [検証記録](verification/README.md) にまとめています。
+2026年10月31日は移動先を新しく取得した環境で、導入からmock、実際のGeminiでの保存まで確認しました。実APIの実行1回の中で、モデルへの要求2回・ツール実行2回により `task-list.md` を保存できました。2026年10月27日の過去の確認と、今回の環境・未確認の範囲は [検証記録](verification/README.md) に分けてまとめています。

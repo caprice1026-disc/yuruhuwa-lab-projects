@@ -1,0 +1,49 @@
+{
+  "checked_at": "2026-10-31T05:59:10.956172+00:00",
+  "environment": {
+    "os": "Windows-10-10.0.26300-SP0",
+    "python": "3.10.9",
+    "fresh_venv": true,
+    "google_genai": "1.52.0",
+    "python_dotenv": "1.1.1"
+  },
+  "implementation_commit": "5b2e410f7e174eb2c0118de65008a7e3a79ddade",
+  "local_change": "requirements.txt comment changed to ASCII; package versions unchanged",
+  "agent_py_sha256": "9d6b2c9ed7493a59cbd086f8809d1e3c755d55d02e15987d8e96ee6b31c21dcf",
+  "requirements_sha256": "9ac3500111eb1ff2102e852b8336b0cfe1fd6906160431b3a378b44878551182",
+  "dependency_install": {
+    "first": "failed cp932 UnicodeDecodeError on original Japanese requirements comment",
+    "after_fix": "success in fresh venv",
+    "pip_check": "No broken requirements found"
+  },
+  "mock": {
+    "success": true,
+    "model_calls": 2,
+    "tool_calls": 2,
+    "saved": "weekly-report.md",
+    "output_sha256": "b9f416d3f4c1c75f94895b67d842c45b7675975ff21deeedfa9ac8716e65fe3a"
+  },
+  "project_tests": {
+    "passed": 20,
+    "failed": 0,
+    "network": false
+  },
+  "live": {
+    "state": "success",
+    "started_at_utc": "2026-10-31T06:13:54.244021+00:00",
+    "command_elapsed_seconds": 3.92,
+    "exit_code": 0,
+    "api_calls": 2,
+    "model_calls": 2,
+    "tool_calls": 2,
+    "saved": "task-list.md",
+    "saved_sha256": "aace45224b5897dc543219a533074bacd8f4911a1089c33fd46ae638c2920f9f",
+    "saved_bytes": 734,
+    "fictional_notice_present": true,
+    "request_cap_including_retries": 3,
+    "sdk_retry_attempts": 1,
+    "additional_requests_after_success": 0,
+    "tier_basis": "user believed the existing key/project was Free Tier and explicitly allowed up to 3 requests; actual billing tier and charges were not queried",
+    "tool_sequence_evidence": "successful LocalTools run with 2 tool calls requires list_candidates before save_markdown; no raw model trace recorded"
+  }
+}
