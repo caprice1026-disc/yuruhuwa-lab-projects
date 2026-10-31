@@ -23,6 +23,6 @@ projects/
     └── verification/
 ```
 
-実装の正本はこの作品集で管理します。記事本文・ブランド・記事サムネイル・編集記録は、別の非公開リポジトリ [note-content-workbench](https://github.com/caprice1026-disc/note-content-workbench) に置きます。作品集もprivateで運用します。URLを知っているだけではアクセスできません。
+実装の正本はこの作品集で管理します。記事本文・ブランド・記事サムネイル・編集記録は、別の非公開リポジトリ [note-content-workbench](https://github.com/caprice1026-disc/note-content-workbench) に置きます。作品集のコードは公開しています。APIキーやローカルの設定ファイルは含めません。
 
 設計・実装・検証を分け、実際に試した条件と未確認の点を記録します。学習用の出力を、実務導入や収益の実績として扱いません。
