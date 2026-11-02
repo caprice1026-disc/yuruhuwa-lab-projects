@@ -7,13 +7,15 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import re
+import shutil
 import struct
 import subprocess
 import sys
 import tempfile
 import threading
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,6 +61,167 @@ class FakeClient:
 
 
 class FirstImageTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("powershell") or shutil.which("pwsh"), "PowerShell is unavailable")
+    def test_recovery_snippet_sets_variables_in_fresh_powershell(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        snippet = next(code for code in re.findall(r"```powershell\n(.*?)```", readme, re.S)
+                       if "./outputs/recovered/" in code)
+        # Run the documented snippet in an isolated new shell. SCP is a local stub:
+        # no key is read and no SSH connection is made.
+        script = """$ErrorActionPreference = 'Stop'
+$script:answers = [System.Collections.Generic.Queue[string]]::new()
+$script:answers.Enqueue('fixture.example.invalid')
+$script:answers.Enqueue('2345')
+$script:answers.Enqueue('fixture-user')
+function Read-Host { $script:answers.Dequeue() }
+function scp { $script:copiedArgs = @($args); $global:LASTEXITCODE = 0 }
+""" + snippet + "\nConvertTo-Json -InputObject $script:copiedArgs -Compress\n"
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "recovery.ps1"
+            path.write_text(script, encoding="utf-8-sig")
+            result = subprocess.run([shutil.which("pwsh") or shutil.which("powershell"), "-NoProfile", "-File", str(path)], cwd=folder, capture_output=True, text=True, timeout=15)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            args = json.loads(result.stdout)
+            self.assertIn("2345", [str(arg) for arg in args])
+            self.assertIn("fixture-user@fixture.example.invalid:/workspace/vast-first-image/ComfyUI/output", args)
+            self.assertTrue(str(args[1]).endswith("vast-first-image_ed25519"))
+            self.assertTrue((Path(folder) / "outputs/recovered").is_dir())
+
+    @unittest.skipUnless(shutil.which("powershell") or shutil.which("pwsh"), "PowerShell is unavailable")
+    def test_status_and_history_from_fresh_powershell_only_get(self):
+        requests = []
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                pass
+            def do_GET(self):
+                requests.append(("GET", self.path))
+                value = ({"system": {}, "devices": [{"type": "cuda", "name": "fixture GPU"}]}
+                         if self.path == "/system_stats" else success())
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(json.dumps(value).encode())
+            def do_POST(self):
+                requests.append(("POST", self.path))
+                self.send_error(405)
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with tempfile.TemporaryDirectory(prefix="vast ps ") as folder:
+                job = Path(folder) / "job.json"
+                job.write_text('{"prompt_id":"job-1"}', encoding="utf-8")
+                quote_ps = lambda value: "'" + str(value).replace("'", "''") + "'"
+                script = (f"$ErrorActionPreference = 'Stop'\nSet-Location {quote_ps(ROOT)}\n"
+                          f"& {quote_ps(sys.executable)} -X utf8 generate.py status --port {server.server_port} --wait-seconds 2\n"
+                          "if ($LASTEXITCODE -ne 0) { throw 'status failed' }\n"
+                          f"function Read-Host {{ {quote_ps(job)} }}\n"
+                          "$jobFile = Read-Host 'job.json path'\n"
+                          f"& {quote_ps(sys.executable)} -X utf8 generate.py history --port {server.server_port} --job-file \"$jobFile\"\n"
+                          "if ($LASTEXITCODE -ne 0) { throw 'history failed' }\n")
+                path = Path(folder) / "readonly.ps1"
+                path.write_text(script, encoding="utf-8-sig")
+                result = subprocess.run([shutil.which("pwsh") or shutil.which("powershell"), "-NoProfile", "-File", str(path)], capture_output=True, text=True, timeout=15)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn('"ready"', result.stdout)
+                self.assertIn('"succeeded"', result.stdout)
+                self.assertEqual(requests, [("GET", "/system_stats"), ("GET", "/history/job-1")])
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join()
+
+    def test_ready_retries_reads_until_cuda_is_reported(self):
+        client = Mock()
+        client.request.side_effect = [generate.URLError("not listening"),
+            {"system": {}, "devices": [{"type": "cuda", "name": "fixture GPU"}]}]
+        with patch.object(generate.time, "sleep"):
+            result = generate.wait_ready(client)
+        self.assertEqual(result["status"], "ready")
+        self.assertFalse(result["generation_submitted"])
+        self.assertEqual([call.args for call in client.request.call_args_list], [("/system_stats",)] * 2)
+
+    def test_ready_timeout_is_bounded_and_never_posts(self):
+        client = Mock()
+        client.request.side_effect = generate.URLError("not listening")
+        with patch.object(generate.time, "monotonic", side_effect=[0, 0, 0, 2, 2]), patch.object(generate.time, "sleep"), self.assertRaises(TimeoutError):
+            generate.wait_ready(client, wait_seconds=1)
+        client.request.assert_called_once_with("/system_stats", timeout=1)
+
+    def test_ready_rejects_wrong_service_or_cpu_only(self):
+        for response in ({}, {"system": {}, "devices": [{"type": "cpu", "name": "CPU"}]}):
+            client = Mock()
+            client.request.return_value = response
+            with self.assertRaises((ValueError, RuntimeError)):
+                generate.wait_ready(client)
+            self.assertEqual(client.request.call_count, 1)
+
+    def test_history_states_are_read_only_and_do_not_claim_missing_job_failed(self):
+        cases = [(success(), {}, "succeeded"),
+                 ({"job-1": {"status": {"status_str": "error"}}}, {}, "failed"),
+                 ({}, {"queue_running": [[0, "job-1"]]}, "running"),
+                 ({}, {"queue_pending": [[0, "job-1"]]}, "queued"),
+                 ({}, {"queue_running": [], "queue_pending": []}, "unknown")]
+        with tempfile.TemporaryDirectory() as folder:
+            job_file = Path(folder) / "job.json"
+            job_file.write_text('{"prompt_id":"job-1"}', encoding="utf-8")
+            for history, queue, expected in cases:
+                client = Mock()
+                client.request.side_effect = [history, queue]
+                result = generate.inspect_job(client, job_file)
+                self.assertEqual(result["status"], expected)
+                self.assertFalse(result["generation_submitted"])
+                self.assertEqual(client.request.call_args_list[0].args, ("/history/job-1",))
+                self.assertTrue(all(len(call.args) == 1 for call in client.request.call_args_list))
+                self.assertEqual(list(Path(folder).iterdir()), [job_file])
+
+    def test_history_rejects_missing_id_before_network(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "job.json"
+            path.write_text('{}', encoding="utf-8")
+            client = Mock()
+            with self.assertRaises(ValueError):
+                generate.inspect_job(client, path)
+            client.request.assert_not_called()
+
+    def test_history_requires_job_file(self):
+        with patch.object(generate.Client, "request") as request, contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(generate.main(["history"]), 1)
+            request.assert_not_called()
+
+    def test_read_only_cli_uses_real_http_without_creating_outputs(self):
+        requests = []
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                pass
+            def do_POST(self):
+                requests.append(("POST", self.path))
+                self.send_error(405)
+            def do_GET(self):
+                requests.append(("GET", self.path))
+                value = ({"system": {}, "devices": [{"type": "cuda", "name": "fixture GPU"}]}
+                         if self.path == "/system_stats" else success())
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(json.dumps(value).encode())
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                path = Path(folder) / "job.json"
+                path.write_text('{"prompt_id":"job-1"}', encoding="utf-8")
+                for action, extra, expected in [("status", ["--wait-seconds", "2"], "ready"),
+                                                ("history", ["--job-file", str(path)], "succeeded")]:
+                    result = subprocess.run([sys.executable, str(ROOT / "generate.py"), action, "--port", str(server.server_port), *extra], cwd=folder, capture_output=True, text=True, timeout=10)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(json.loads(result.stdout)["status"], expected)
+                self.assertEqual(list(Path(folder).iterdir()), [path])
+            self.assertEqual(requests, [("GET", "/system_stats"), ("GET", "/history/job-1")])
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join()
+
     def test_workflow_has_only_core_nodes_and_one_image(self):
         graph = generate.workflow()
         self.assertEqual(len(graph), 7)

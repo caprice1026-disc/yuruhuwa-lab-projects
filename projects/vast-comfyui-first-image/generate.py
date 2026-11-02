@@ -97,6 +97,63 @@ def write_json(path, value):
         stream.write(json.dumps(value, ensure_ascii=False, indent=2) + "\n")
 
 
+def wait_ready(client, *, wait_seconds=120, poll_seconds=2):
+    """Read system stats until reachable; never submit a prompt or rent a GPU."""
+    if not 1 <= wait_seconds <= 1800:
+        raise ValueError("wait_seconds must be 1..1800")
+    deadline = time.monotonic() + wait_seconds
+    while time.monotonic() < deadline:
+        try:
+            stats = client.request("/system_stats", timeout=min(5, max(0.1, deadline - time.monotonic())))
+        except HTTPError:
+            raise
+        except (URLError, TimeoutError, ConnectionError):
+            time.sleep(min(poll_seconds, max(0, deadline - time.monotonic())))
+            continue
+        if not isinstance(stats, dict) or not isinstance(stats.get("system"), dict) or not isinstance(stats.get("devices"), list):
+            raise ValueError("Unexpected /system_stats response; check the SSH tunnel destination")
+        devices = [item.get("name") for item in stats["devices"]
+                   if isinstance(item, dict) and item.get("type") == "cuda" and isinstance(item.get("name"), str)]
+        if not devices:
+            raise RuntimeError("ComfyUI responded but no CUDA device was reported")
+        return {"status": "ready", "endpoint": "/system_stats", "cuda_devices": devices,
+                "generation_submitted": False}
+    raise TimeoutError("ComfyUI did not become ready; check the SSH screen and budget before continuing")
+
+
+def inspect_job(client, job_file):
+    """Read one saved prompt's history and queue state. No resubmission or recovery."""
+    record = json.loads(Path(job_file).read_text(encoding="utf-8"))
+    prompt_id = record.get("prompt_id") if isinstance(record, dict) else None
+    if not isinstance(prompt_id, str) or not prompt_id or len(prompt_id) > 128:
+        raise ValueError("job.json has no valid prompt_id")
+    history = client.request("/history/" + quote(prompt_id, safe=""))
+    if not isinstance(history, dict):
+        raise ValueError("Unexpected history response")
+    job = history.get(prompt_id)
+    result = {"prompt_id": prompt_id, "status": "unknown", "generation_submitted": False}
+    if job:
+        status = job.get("status", {}) if isinstance(job, dict) else {}
+        if status.get("status_str") == "error":
+            result["status"] = "failed"
+            return result
+        if status.get("completed") is True and status.get("status_str") == "success":
+            result["status"] = "succeeded"
+            result["images"] = job.get("outputs", {}).get("7", {}).get("images", [])
+            return result
+    queue = client.request("/queue")
+    if not isinstance(queue, dict):
+        raise ValueError("Unexpected queue response")
+    for key, label in (("queue_running", "running"), ("queue_pending", "queued")):
+        items = queue.get(key, [])
+        if not isinstance(items, list):
+            raise ValueError("Unexpected queue items")
+        if any(isinstance(item, list) and len(item) > 1 and item[1] == prompt_id for item in items):
+            result["status"] = label
+            break
+    return result
+
+
 def generate(client, graph, output_root, *, wait_seconds=600, poll_seconds=2):
     """Submit exactly once; errors and timeouts never submit a replacement job."""
     if not 1 <= wait_seconds <= 1800:
@@ -157,15 +214,24 @@ def generate(client, graph, output_root, *, wait_seconds=600, poll_seconds=2):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("plan", "generate"))
+    parser.add_argument("action", choices=("plan", "status", "history", "generate"))
     parser.add_argument("--port", type=int, default=8188)
     parser.add_argument("--prompt")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs")
     parser.add_argument("--wait-seconds", type=int, default=600)
+    parser.add_argument("--job-file", type=Path)
     args = parser.parse_args(argv)
     try:
-        graph = workflow(args.prompt)
         client = Client(args.port)
+        if args.action == "status":
+            print(json.dumps(wait_ready(client, wait_seconds=args.wait_seconds), ensure_ascii=False, indent=2))
+            return 0
+        if args.action == "history":
+            if args.job_file is None:
+                raise ValueError("history requires --job-file pointing to the saved job.json")
+            print(json.dumps(inspect_job(client, args.job_file), ensure_ascii=False, indent=2))
+            return 0
+        graph = workflow(args.prompt)
         if args.action == "plan":
             print(json.dumps({"mode": "offline-plan", "network_requests": 0,
                               "model": graph["1"]["inputs"]["ckpt_name"],
@@ -179,7 +245,7 @@ def main(argv=None):
         return 0
     except (OSError, ValueError, RuntimeError, HTTPError, URLError, TimeoutError) as exc:
         print(f"Stopped: {type(exc).__name__}: {exc}", file=sys.stderr)
-        print("No automatic retry or GPU cleanup. Check remote history before retrying; Destroy when finished.", file=sys.stderr)
+        print("No generation resubmission or GPU cleanup. Check remote history before retrying; Destroy when finished.", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
         print("Interrupted locally. The GPU may still run. Recover images if needed, then Destroy in Vast.ai.", file=sys.stderr)

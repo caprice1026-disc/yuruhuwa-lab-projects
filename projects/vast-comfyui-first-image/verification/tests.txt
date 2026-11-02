@@ -1,5 +1,8 @@
 test_corrupt_response_does_not_claim_success (test_first_image.FirstImageTests) ... ok
 test_download_requires_exact_size_and_hash (test_first_image.FirstImageTests) ... ok
+test_history_rejects_missing_id_before_network (test_first_image.FirstImageTests) ... ok
+test_history_requires_job_file (test_first_image.FirstImageTests) ... ok
+test_history_states_are_read_only_and_do_not_claim_missing_job_failed (test_first_image.FirstImageTests) ... ok
 test_invalid_prompts (test_first_image.FirstImageTests) ... ok
 test_model_url_pinned_and_constraints_present (test_first_image.FirstImageTests) ... ok
 test_multiple_images_rejected (test_first_image.FirstImageTests) ... ok
@@ -7,7 +10,12 @@ test_plan_makes_no_request (test_first_image.FirstImageTests) ... ok
 test_png_framing_crc_and_dimensions (test_first_image.FirstImageTests) ... ok
 test_port_range (test_first_image.FirstImageTests) ... ok
 test_prompt_changes_only_text (test_first_image.FirstImageTests) ... ok
+test_read_only_cli_uses_real_http_without_creating_outputs (test_first_image.FirstImageTests) ... ok
+test_ready_rejects_wrong_service_or_cpu_only (test_first_image.FirstImageTests) ... ok
+test_ready_retries_reads_until_cuda_is_reported (test_first_image.FirstImageTests) ... ok
+test_ready_timeout_is_bounded_and_never_posts (test_first_image.FirstImageTests) ... ok
 test_real_http_cli_loopback_integration (test_first_image.FirstImageTests) ... ok
+test_recovery_snippet_sets_variables_in_fresh_powershell (test_first_image.FirstImageTests) ... ok
 test_redirect_refused (test_first_image.FirstImageTests) ... ok
 test_rejected_and_uncertain_submit_not_retried (test_first_image.FirstImageTests) ... ok
 test_remote_error_never_resubmits (test_first_image.FirstImageTests) ... ok
@@ -16,10 +24,11 @@ test_saved_image_and_records_no_overwrite (test_first_image.FirstImageTests) ...
 test_setup_plan_is_offline (test_first_image.FirstImageTests) ... ok
 test_setup_refuses_existing_directory (test_first_image.FirstImageTests) ... ok
 test_setup_refuses_non_linux (test_first_image.FirstImageTests) ... ok
+test_status_and_history_from_fresh_powershell_only_get (test_first_image.FirstImageTests) ... ok
 test_timeout_never_resubmits_or_destroys (test_first_image.FirstImageTests) ... ok
 test_workflow_has_only_core_nodes_and_one_image (test_first_image.FirstImageTests) ... ok
 
 ----------------------------------------------------------------------
-Ran 20 tests in 1.185s
+Ran 29 tests in 5.850s
 
 OK

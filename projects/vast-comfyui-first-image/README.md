@@ -1,4 +1,4 @@
-# GPUなしのWindows PCからVast.aiで画像を1枚作る
+# GPUなしのWindowsからVast.ai×ComfyUIで画像を1枚保存する
 
 Vast.aiで借りたGPUにComfyUIを用意し、青いマグカップの画像をWindowsへ保存する教材です。ComfyUIは画像生成の処理をつないで実行するソフトです。手元のPCは接続と保存を担当するので、画像生成用のGPUは要りません。
 
@@ -68,22 +68,43 @@ Get-Content "$keyPath.pub"
 
 ### 4. GPUを1台借りる
 
-Vast.aiのTemplatesからテンプレート作成・編集画面を開き、次の構成にします。設定名の対応は [Template Settings](https://docs.vast.ai/guides/templates/template-settings)を参照してください。公開テンプレートにする必要はありません。
+最初にTemplatesで実行環境を保存し、次にSearchでGPUを探します。[公式Quickstart](https://docs.vast.ai/guides/get-started/quickstart)もこの順序で案内しています。
 
-| 設定 | この教材で使う値 |
+**Templates：テンプレートを作成・保存する**
+
+作成・編集画面では次の項目を設定します。公開テンプレートにする必要はありません。
+
+| 設定 | 値 |
 | --- | --- |
 | Image Path:Tag | `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime` |
 | Launch Mode | `Interactive shell server, SSH` |
 | On-start Script | 空欄 |
-| 追加の公開ポート | 8188を追加しない。ComfyUIにはSSH経由で接続 |
-| GPU | RTX 3090、24GB、1台 |
+| 追加の公開ポート | 8188を追加しない。ComfyUIにはSSHトンネルで接続 |
+
+`Create & Use` で保存してSearchへ進みます。既存の自分のテンプレートを編集した場合は `Save` で保存し、Searchでそのテンプレートを選んでください。[設定名と保存ボタンの説明](https://docs.vast.ai/guides/templates/template-settings)
+
+**Search：GPUとレンタル条件を設定する**
+
+Searchの上部・左側の条件欄で、次の値を指定します。選択中のテンプレートも確認してください。
+
+| 検索・レンタル条件 | 値 |
+| --- | --- |
+| GPUの種類・メモリ・台数 | RTX 3090、24GB、1台 |
 | CPUアーキテクチャ | x86_64 / AMD64 |
-| ディスク | 64GB。インストール開始時に空き30GiB以上 |
+| ディスク容量のスライダー | 64GB。導入開始時に空き30GiB以上が必要 |
 | レンタル方式 | On-demand |
 
-RTX 3090は過去の検証構成に合わせた選択です。最安・最小必要VRAMという意味ではありません。CUDA 12.8対応、通信速度、ホストの信頼性表示、GPU数、ディスク容量、料金の内訳を確認し、予算に合う候補がなければ借りずに終了します。別モデルや複数GPUへ自動で切り替えません。
+候補のホスト情報で、CPUと対応CUDAバージョンを確認します。必要なのはCUDA 12.8以上に対応するホストです。公式の項目名 `cuda_vers` はホストのドライバーが対応する最大CUDAバージョンを指し、テンプレートのイメージ名とは別の情報です。対応バージョンを画面で確認できない候補は借りずに、公式案内やサポートで確かめてください。[検索項目の定義](https://docs.vast.ai/cli/reference/search-instances)
 
-Rentを押す前に料金と終了予定を記録し、起動後はInstancesの対象IDを控えます。作成・取得に時間がかかる場合も、重ねてRentを押さないでください。画面で接続情報が出たら、SSHホスト・ポート・ユーザー名を次の手順で入力します。
+RTX 3090は過去の検証構成に合わせた選択で、最安・最小必要VRAMという意味ではありません。通信速度とホストの信頼性表示も確認します。別モデルや複数GPUへ自動で切り替える機能はありません。容量は作成後に変更できないため、Rent前に64GBになっているか見直してください。
+
+**Searchの候補カード：料金を確認してRentする**
+
+候補カードの価格にマウスを重ね、GPU・ストレージ・送受信の内訳を確認します。単価と終了予定を記録し、予算に合う候補だけRentします。予算に合わなければ、その日は借りずに終了して構いません。[候補カードとディスク設定の説明](https://docs.vast.ai/guides/instances/choosing/find-and-rent)
+
+**Instances：対象IDとSSH接続情報を確認する**
+
+起動後はInstancesで対象IDを控え、対象カードのSSHアイコン、または `Open Terminal Access` を開きます。そこに表示されたSSHコマンドからホスト・ポート・ユーザー名を読み取ります。準備中に重ねてRentを押すと、別のインスタンスが増えるので待ってください。[SSH情報の表示場所](https://docs.vast.ai/guides/instances/connect/ssh)
 
 ### 5. SSHで接続し、ComfyUIを用意する
 
@@ -131,7 +152,26 @@ cd /workspace/vast-first-image/ComfyUI
 
 ### 6. Windowsから1枚生成して保存する
 
-Windowsで別のPowerShellを開き、教材のフォルダーへ移動してください。GPU側の画面には入力しません。
+SSHの画面は開いたまま、**Windowsで別のPowerShell**を開いてください。エクスプローラーで教材の `projects/vast-comfyui-first-image` を開き、アドレスバーに `powershell` と入力すると、そのフォルダーで新しい画面を開けます。GPU側のLinux画面には入力しません。
+
+まずComfyUIの起動を確認します。次はSSHトンネル越しに `GET /system_stats` を読み、最大120秒待つコマンドです。生成依頼は送りません。
+
+```powershell
+python -X utf8 generate.py status --wait-seconds 120
+```
+
+成功時の表示例です。GPU名は接続先によって変わります。この例は説明用で、今回の実GPU実行結果ではありません。
+
+```json
+{
+  "status": "ready",
+  "endpoint": "/system_stats",
+  "cuda_devices": ["cuda:0 NVIDIA GeForce RTX 3090"],
+  "generation_submitted": false
+}
+```
+
+`ready` と借りたGPU名を確認できたら、同じWindowsのPowerShellで次を実行します。起動確認だけではモデルの読み込みや画像生成の成功までは分かりません。時間切れやエラーなら生成に進まず、SSH画面のログ、トンネル、終了予定を確認してください。再確認には `status` を使えます。[ComfyUIの読み取りAPI](https://docs.comfy.org/development/comfyui-server/comms_routes)
 
 ```powershell
 python -X utf8 generate.py generate
@@ -158,14 +198,14 @@ python -X utf8 generate.py generate --output-dir "$env:USERPROFILE/Pictures/Vast
 
 ## 仕組みとファイル
 
-`generate.py` は標準ComfyUI APIへ1回だけ依頼し、履歴の成功を待ち、画像をWindowsへ取得します。GPUの契約や削除には触りません。[ComfyUIのAPI資料](https://docs.comfy.org/development/comfyui-server/comms_routes)に `/prompt`・`/history`・`/view` の役割があります。
+`generate.py generate` は標準ComfyUI APIへ1回だけ依頼し、履歴の成功を待ち、画像をWindowsへ取得します。GPUの契約や削除には触りません。[ComfyUIのAPI資料](https://docs.comfy.org/development/comfyui-server/comms_routes)に `/system_stats`・`/prompt`・`/history`・`/queue`・`/view` の役割があります。
 
 | ファイル | 役割 |
 | --- | --- |
 | `workflow.api.json` | 追加ノードを使わない7ノードの処理。画像1枚、seed 42、32 steps |
 | `model.json` | RealVisXL V5.0の配布先・固定revision・サイズ・SHA-256 |
 | `setup_remote.py` | 専用Linuxコンテナの構築。既存インストールの上書きを拒否 |
-| `generate.py` | 1回の生成依頼とPNG保存。HTTPリダイレクトとプロキシ経由通信を拒否 |
+| `generate.py` | 起動・履歴の読み取り確認、1回の生成依頼とPNG保存。HTTPリダイレクトとプロキシ経由通信を拒否 |
 | `tests/` | GPU不要のテスト。成功、失敗、タイムアウト、破損画像などを検査 |
 
 ComfyUIのcommitとモデルのrevisionを固定しています。Dockerはタグ指定で、Python依存関係すべての完全固定ではありません。将来の取得先・依存パッケージ・ホストの変更で手順が動かなくなる可能性があります。
@@ -176,20 +216,49 @@ ComfyUIのcommitとモデルのrevisionを固定しています。Dockerはタ�
 | --- | --- |
 | `python` / `ssh` がない | 手順2の導入を完了し、PowerShellを開き直す |
 | SSHが拒否される | 対象ID、ホスト、ポート、ユーザー、指定した秘密鍵と登録公開鍵の対応を確認 |
-| 8188番が使われている | 既存アプリを確認。別のローカル番号ならSSHの左側を `127.0.0.1:8189` にし、生成時に `--port 8189` を指定 |
+| 8188番が使われている | 既存アプリを確認。別のローカル番号ならSSHの左側を `127.0.0.1:8189` にし、`status`・`history`・`generate` の各コマンドに `--port 8189` を指定 |
 | インストールが途中で止まる | エラーを確認。既存フォルダーは自動削除・上書きしない。予算内に直せなければDestroyして終了 |
 | `SHA-256 mismatch` | 未完了の `.part` は読み込まれない。検査を省略せず、配布元と通信を確認 |
 | メモリ不足・生成エラー | GPU側のログを確認。自動で大きなGPUを借りない。原因が分からなければDestroy |
 | `Saved:` が出ない | SSH画面とComfyUIの状態を確認。受付番号があれば履歴を調べ、重複依頼を避ける |
 
-画像はGPU側の `/workspace/vast-first-image/ComfyUI/output/` にも保存されます。Windowsへの取得だけ失敗した場合は、同じインスタンスが残っている間に次を使います。Windows側で手順5の変数を設定したPowerShellから実行してください。
+### 受付番号から、待つか回収するかを判断する
+
+SSHとComfyUIの画面を開いたまま、別のWindows PowerShellを教材フォルダーで開きます。まず上の `status` コマンドで接続を確認してください。失敗した実行で表示された `Run folder:` のフォルダーをエクスプローラーで開き、その中の `job.json` のパスをコピーします。別の実行の受付番号と取り違えないでください。
 
 ```powershell
-New-Item -ItemType Directory -Force ./outputs/recovered | Out-Null
-scp -i "$keyPath" -P $sshPort -r "${sshUser}@${sshHost}:/workspace/vast-first-image/ComfyUI/output" ./outputs/recovered/
+$jobFile = Read-Host '今回の実行フォルダーにあるjob.jsonのフルパス（前後の引用符は外す）'
+python -X utf8 generate.py history --job-file "$jobFile"
 ```
 
-回収したPNGを開いてからDestroyします。まだ画像ができていない場合や、費用上限を優先して生成を中断する場合は、回収できないことを理解したうえで対象GPUをDestroyしてください。
+このコマンドは `job.json` の `prompt_id` を使い、`GET /history/<prompt_id>` を取得します。完了履歴がない場合は `GET /queue` も読みます。生成依頼、履歴削除、画像回収、Destroyは行いません。表示される `status` で次の行動を選びます。
+
+| status | 次にすること |
+| --- | --- |
+| `running` / `queued` | 実行中／順番待ち。予算と終了予定に余裕があれば待ち、同じ `history` コマンドで再確認する |
+| `succeeded` | GPU側の生成は成功。`images` に出たファイルを、次の手順でWindowsへ回収して開く |
+| `failed` | 生成エラー。SSH画面のログを確認し、回収できる画像があるか確認する。今回は終えるならDestroy |
+| `unknown` | 履歴とキューで確認できない。完了直後の読み取りのずれ、再起動、履歴消失などでも起こり得るため、未受付とは断定しない。ログと出力フォルダーを確認し、生成を再送しない |
+
+`job.json` がない場合も、通信切断で受付結果を受け取れなかった可能性があります。生成を重ねず、SSH画面のログと出力フォルダーを確認してください。原因を調べ続けると料金は増えます。終了予定に達したら、回収できない画像があることを理解したうえでDestroyして終了します。
+
+### 別のWindows PowerShellで画像を回収する
+
+画像はGPU側の `/workspace/vast-first-image/ComfyUI/output/` にも保存されます。同じインスタンスが残っていれば、次のコマンドで出力フォルダーをコピーできます。**SSHでLinuxに接続している画面では実行しません。** Windowsで新しいPowerShellを教材フォルダーに開き、次の4変数を設定し直してください。新しい画面には前の画面の変数は引き継がれません。
+
+Vast.aiのInstancesで同じ対象IDのSSH接続情報を開き、その値を入力します。秘密鍵の名前を変えて作成した場合は `$keyPath` も合わせてください。
+
+```powershell
+$keyPath = Join-Path $env:USERPROFILE '.ssh/vast-first-image_ed25519'
+$sshHost = Read-Host '同じ対象インスタンスのSSHホスト'
+$sshPort = [int](Read-Host '同じ対象インスタンスのSSHポート')
+$sshUser = Read-Host '同じ対象インスタンスのユーザー名（通常root）'
+New-Item -ItemType Directory -Force ./outputs/recovered | Out-Null
+scp -i "$keyPath" -P $sshPort -r "${sshUser}@${sshHost}:/workspace/vast-first-image/ComfyUI/output" ./outputs/recovered/
+if ($LASTEXITCODE -ne 0) { throw '回収に失敗しました。保存完了と判断せず接続情報と出力を確認してください。' }
+```
+
+`outputs/recovered/output/` のPNGを開いて確認し、手順7のDestroyへ進みます。まだ画像ができていない場合や、費用上限を優先して生成を中断する場合は、回収できないことを理解したうえで対象GPUをDestroyしてください。
 
 ## モデルと出典
 
