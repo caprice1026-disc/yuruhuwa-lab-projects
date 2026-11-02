@@ -1,0 +1,58 @@
+{
+  "mode": "offline-plan",
+  "comfy_commit": "c9ea36b9d2140c89b2ef84f93f428df474e72ba5",
+  "commands": [
+    [
+      "git",
+      "init",
+      "/workspace/vast-first-image/ComfyUI"
+    ],
+    [
+      "git",
+      "-C",
+      "/workspace/vast-first-image/ComfyUI",
+      "fetch",
+      "--depth",
+      "1",
+      "https://github.com/Comfy-Org/ComfyUI.git",
+      "c9ea36b9d2140c89b2ef84f93f428df474e72ba5"
+    ],
+    [
+      "git",
+      "-C",
+      "/workspace/vast-first-image/ComfyUI",
+      "checkout",
+      "--detach",
+      "FETCH_HEAD"
+    ],
+    [
+      "python",
+      "-m",
+      "venv",
+      "--system-site-packages",
+      "/workspace/vast-first-image/.venv"
+    ],
+    [
+      "/workspace/vast-first-image/.venv/bin/python",
+      "-m",
+      "pip",
+      "install",
+      "-c",
+      "/workspace/vast-first-image/constraints.txt",
+      "-r",
+      "/workspace/vast-first-image/ComfyUI/requirements.txt"
+    ]
+  ],
+  "model": {
+    "repository": "SG161222/RealVisXL_V5.0",
+    "revision": "ac93e0dda1f6d448cae19bbfab8c5e720a5e48bc",
+    "filename": "RealVisXL_V5.0_fp16.safetensors",
+    "size_bytes": 6938065488,
+    "sha256": "6a35a7855770ae9820a3c931d4964c3817b6d9e3c6f9c4dabb5b3a94e5643b80",
+    "metadata_checked_date_utc": "2026-11-02",
+    "license_url": "https://huggingface.co/SG161222/RealVisXL_V5.0",
+    "url": "https://huggingface.co/SG161222/RealVisXL_V5.0/resolve/ac93e0dda1f6d448cae19bbfab8c5e720a5e48bc/RealVisXL_V5.0_fp16.safetensors"
+  },
+  "downloads_models": false,
+  "rents_gpu": false
+}

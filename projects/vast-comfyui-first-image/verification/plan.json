@@ -1,0 +1,12 @@
+{
+  "mode": "offline-plan",
+  "network_requests": 0,
+  "model": "RealVisXL_V5.0_fp16.safetensors",
+  "image": {
+    "width": 768,
+    "height": 1024,
+    "batch_size": 1
+  },
+  "prompt": "A blue ceramic mug on a wooden table beside a window, soft morning daylight, realistic product photograph, simple background, no text, no logo.",
+  "base_url": "http://127.0.0.1:8188"
+}

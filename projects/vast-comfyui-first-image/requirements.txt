@@ -1,0 +1,2 @@
+# The Windows client and offline tests use Python 3.10+ standard library only.
+# Remote ComfyUI dependencies are installed separately by setup_remote.py.

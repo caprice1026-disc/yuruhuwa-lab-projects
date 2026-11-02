@@ -5,6 +5,7 @@ PythonとAIを使った、小さく動かせる作品をまとめています。
 | 作品 | できること | 始める場所 |
 | --- | --- | --- |
 | Python × Gemini 最小AIエージェント | 架空の記事候補を読み、企画メモをMarkdownで保存する | [一緒に動かす](projects/python-gemini-minimal-agent/README.md) |
+| Vast.ai × ComfyUI はじめての画像生成 | Windowsから画像1枚を保存し、手動でDestroyする手順。ローカル検証済み・実GPU再検証は未実施 | [料金と実行手順](projects/vast-comfyui-first-image/README.md) |
 
 コードに慣れていなくても、最初はAPIキー不要の模擬実行から試せます。Gemini APIを使う前に、無料枠の対象と上限を確認する手順があります。
 
