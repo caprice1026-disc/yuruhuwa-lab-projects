@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "demo-before",
+  "account": "demo",
+  "period_start": "2026-10-15",
+  "period_end": "2026-11-11",
+  "updated_at": "2026-11-11T22:01:00",
+  "timezone": null,
+  "source": "synthetic-before",
+  "articles_complete": true,
+  "totals": {"impressions": 1000, "page_views": 100, "likes": 10},
+  "articles": [
+    {"id": "article-a", "impressions": 600, "page_views": 60, "likes": 6},
+    {"id": "article-b", "impressions": 400, "page_views": 40, "likes": 4}
+  ]
+}

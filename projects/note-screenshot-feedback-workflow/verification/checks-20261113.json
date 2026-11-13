@@ -1,0 +1,309 @@
+{
+  "checked_at": "2026-11-13T13:15:18.661869+00:00",
+  "environment": {
+    "python": "3.10.9",
+    "platform": "win32"
+  },
+  "network_calls": 0,
+  "fixtures": "synthetic only",
+  "results": [
+    {
+      "args": [
+        "ingest",
+        "fixtures/before.json"
+      ],
+      "exit_code": 0,
+      "output": {
+        "status": "inserted",
+        "id": "demo-before"
+      }
+    },
+    {
+      "args": [
+        "ingest",
+        "fixtures/current.json"
+      ],
+      "exit_code": 0,
+      "output": {
+        "status": "inserted",
+        "id": "demo-current"
+      }
+    },
+    {
+      "args": [
+        "compare",
+        "demo-before",
+        "demo-current"
+      ],
+      "exit_code": 0,
+      "output": {
+        "before": "demo-before",
+        "after": "demo-current",
+        "label": "observed_difference",
+        "warnings": [
+          "timezone_unknown: order follows display times; elapsed time is not calculated",
+          "period_changed: observed difference, not daily growth"
+        ],
+        "totals": {
+          "impressions": 200,
+          "page_views": 12,
+          "likes": 2
+        },
+        "articles": [
+          {
+            "id": "article-a",
+            "impressions": 100,
+            "page_views": 10,
+            "likes": 1
+          },
+          {
+            "id": "article-b",
+            "impressions": 100,
+            "page_views": 2,
+            "likes": 1
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "review",
+        "fixtures/review-before.json"
+      ],
+      "exit_code": 0,
+      "output": {
+        "status": "inserted",
+        "id": "review-before"
+      }
+    },
+    {
+      "args": [
+        "review",
+        "fixtures/review-current.json"
+      ],
+      "exit_code": 0,
+      "output": {
+        "status": "inserted",
+        "id": "review-current"
+      }
+    },
+    {
+      "args": [
+        "decision",
+        "review-current",
+        "candidate-howto",
+        "--choice",
+        "defer",
+        "--instruction",
+        "教材の動作確認として保留する",
+        "--scope",
+        "記事は作成しない"
+      ],
+      "exit_code": 0,
+      "output": {
+        "status": "recorded",
+        "seq": 1,
+        "note": "decision is a journal entry, not authentication or permission to publish"
+      }
+    },
+    {
+      "args": [
+        "context",
+        "demo"
+      ],
+      "exit_code": 0,
+      "output": {
+        "account": "demo",
+        "latest_observations": [
+          {
+            "account": "demo",
+            "articles": [
+              {
+                "id": "article-a",
+                "impressions": 600,
+                "likes": 6,
+                "page_views": 60
+              },
+              {
+                "id": "article-b",
+                "impressions": 400,
+                "likes": 4,
+                "page_views": 40
+              }
+            ],
+            "articles_complete": true,
+            "id": "demo-before",
+            "period_end": "2026-11-11",
+            "period_start": "2026-10-15",
+            "schema_version": 1,
+            "source": "synthetic-before",
+            "timezone": null,
+            "totals": {
+              "impressions": 1000,
+              "likes": 10,
+              "page_views": 100
+            },
+            "updated_at": "2026-11-11T22:01:00"
+          },
+          {
+            "account": "demo",
+            "articles": [
+              {
+                "id": "article-a",
+                "impressions": 700,
+                "likes": 7,
+                "page_views": 70
+              },
+              {
+                "id": "article-b",
+                "impressions": 500,
+                "likes": 5,
+                "page_views": 42
+              }
+            ],
+            "articles_complete": true,
+            "id": "demo-current",
+            "period_end": "2026-11-12",
+            "period_start": "2026-10-16",
+            "schema_version": 1,
+            "source": "synthetic-current",
+            "timezone": null,
+            "totals": {
+              "impressions": 1200,
+              "likes": 12,
+              "page_views": 112
+            },
+            "updated_at": "2026-11-12T19:52:00"
+          }
+        ],
+        "comparison": {
+          "before": "demo-before",
+          "after": "demo-current",
+          "label": "observed_difference",
+          "warnings": [
+            "timezone_unknown: order follows display times; elapsed time is not calculated",
+            "period_changed: observed difference, not daily growth"
+          ],
+          "totals": {
+            "impressions": 200,
+            "page_views": 12,
+            "likes": 2
+          },
+          "articles": [
+            {
+              "id": "article-a",
+              "impressions": 100,
+              "page_views": 10,
+              "likes": 1
+            },
+            {
+              "id": "article-b",
+              "impressions": 100,
+              "page_views": 2,
+              "likes": 1
+            }
+          ]
+        },
+        "hypotheses": [
+          {
+            "claim": "作る手順を含む記事への関心がある",
+            "evidence": [
+              "本文変更や新記事公開の実施記録がなく、効果を判定できない。"
+            ],
+            "id": "h-howto",
+            "next_check": "公開日と変更日を記録し、同じ公開経過日で比較する。",
+            "status": "inconclusive",
+            "last_review_id": "review-current"
+          },
+          {
+            "claim": "検索からの流入が続いている",
+            "evidence": [],
+            "id": "h-search",
+            "next_check": "次回は流入元の画面も確認する。",
+            "status": "pending",
+            "last_review_id": "review-before"
+          }
+        ],
+        "latest_review": {
+          "applied_changes": [],
+          "candidates": [
+            {
+              "id": "candidate-howto",
+              "needed": [
+                "Pythonの実装例",
+                "実行結果"
+              ],
+              "outcome": "数値と仮説を分けて保存する",
+              "reader": "記録を続けたい人",
+              "title": "振り返りの道具を作る"
+            },
+            {
+              "id": "candidate-search",
+              "needed": [
+                "流入元の画面"
+              ],
+              "outcome": "流入元を確認する",
+              "reader": "記事の見つかり方を知りたい人",
+              "title": "流入元の記録を試す"
+            }
+          ],
+          "facts": [
+            "教材用の架空データ。全体のPVは112。前回との観測差は12。",
+            "集計期間がずれているため日次の増加とは扱わない。"
+          ],
+          "hypotheses": [
+            {
+              "claim": "作る手順を含む記事への関心がある",
+              "evidence": [
+                "本文変更や新記事公開の実施記録がなく、効果を判定できない。"
+              ],
+              "id": "h-howto",
+              "next_check": "公開日と変更日を記録し、同じ公開経過日で比較する。",
+              "status": "inconclusive"
+            }
+          ],
+          "id": "review-current",
+          "previous_review_id": "review-before",
+          "snapshot_id": "demo-current"
+        },
+        "decisions": [
+          {
+            "seq": 1,
+            "review_id": "review-current",
+            "candidate_id": "candidate-howto",
+            "choice": "defer",
+            "instruction": "教材の動作確認として保留する",
+            "scope": "記事は作成しない",
+            "recorded_at": "2026-11-13T13:15:21.252165+00:00"
+          }
+        ],
+        "instruction": "Read the actual user instruction before drafting. No automatic publishing."
+      }
+    },
+    {
+      "args": [
+        "ingest",
+        "fixtures/current.json"
+      ],
+      "exit_code": 0,
+      "output": {
+        "status": "duplicate",
+        "id": "demo-current"
+      }
+    }
+  ],
+  "unit_tests": {
+    "command": "python -X utf8 -B -m unittest discover -s tests -v",
+    "exit_code": 0,
+    "output": "test_claim_change_needs_new_id (test_feedback.FeedbackTests) ... ok\ntest_cli_bad_input_returns_error_without_rows (test_feedback.FeedbackTests) ... ok\ntest_complete_total_mismatch_rejected_incomplete_retained (test_feedback.FeedbackTests) ... ok\ntest_conflicting_observation_rolls_back_and_keeps_original (test_feedback.FeedbackTests) ... ok\ntest_context_carries_unmentioned_hypothesis_and_latest_evaluation (test_feedback.FeedbackTests) ... ok\ntest_context_keeps_other_account_out (test_feedback.FeedbackTests) ... ok\ntest_context_uses_display_time_not_ingestion_order (test_feedback.FeedbackTests) ... ok\ntest_decision_requires_actual_text_and_known_candidate (test_feedback.FeedbackTests) ... ok\ntest_different_accounts_and_timezones_cannot_be_compared (test_feedback.FeedbackTests) ... ok\ntest_duplicate_json_keys_rejected (test_feedback.FeedbackTests) ... ok\ntest_negative_boolean_and_string_metrics_rejected (test_feedback.FeedbackTests) ... ok\ntest_negative_difference_is_preserved (test_feedback.FeedbackTests) ... ok\ntest_renamed_and_reordered_input_is_duplicate (test_feedback.FeedbackTests) ... ok\ntest_reversed_time_is_rejected (test_feedback.FeedbackTests) ... ok\ntest_review_requires_known_snapshot_valid_status_and_evidence (test_feedback.FeedbackTests) ... ok\ntest_rolling_difference_and_unknown_timezone_warning (test_feedback.FeedbackTests) ... ok\ntest_same_id_cannot_be_reused (test_feedback.FeedbackTests) ... ok\ntest_unknown_metric_and_new_article_are_not_zero (test_feedback.FeedbackTests) ... ok\n\n----------------------------------------------------------------------\nRan 18 tests in 0.493s\n\nOK\n"
+  },
+  "row_counts": {
+    "snapshots": 2,
+    "reviews": 2,
+    "decisions": 1
+  },
+  "temporary_database_removed": true,
+  "runtime_sha256": "68a3ce3f2de7b0a04d41796865632165c2dcd1eb039b7499da366f5abe349e46",
+  "tests_sha256": "e9cb14bfe851cc2b68bb1e9bdfc20d006c0cce367fc04ca77a5fa7fd279b58fe",
+  "verification_note": "The initial verification harness left its inspection connection open on Windows. The harness was corrected, the temporary DB removed, and the demo rerun successfully; shipped feedback.py was unchanged."
+}

@@ -1,0 +1,14 @@
+{
+  "id": "review-current",
+  "snapshot_id": "demo-current",
+  "previous_review_id": "review-before",
+  "facts": ["教材用の架空データ。全体のPVは112。前回との観測差は12。", "集計期間がずれているため日次の増加とは扱わない。"],
+  "hypotheses": [
+    {"id": "h-howto", "claim": "作る手順を含む記事への関心がある", "status": "inconclusive", "evidence": ["本文変更や新記事公開の実施記録がなく、効果を判定できない。"], "next_check": "公開日と変更日を記録し、同じ公開経過日で比較する。"}
+  ],
+  "candidates": [
+    {"id": "candidate-howto", "title": "振り返りの道具を作る", "reader": "記録を続けたい人", "outcome": "数値と仮説を分けて保存する", "needed": ["Pythonの実装例", "実行結果"]},
+    {"id": "candidate-search", "title": "流入元の記録を試す", "reader": "記事の見つかり方を知りたい人", "outcome": "流入元を確認する", "needed": ["流入元の画面"]}
+  ],
+  "applied_changes": []
+}

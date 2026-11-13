@@ -1,0 +1,14 @@
+{
+  "id": "review-before",
+  "snapshot_id": "demo-before",
+  "previous_review_id": null,
+  "facts": ["教材用の架空データ。全体のPVは100。"],
+  "hypotheses": [
+    {"id": "h-howto", "claim": "作る手順を含む記事への関心がある", "status": "pending", "evidence": [], "next_check": "同じ公開経過日で比較できる観測を残す。"},
+    {"id": "h-search", "claim": "検索からの流入が続いている", "status": "pending", "evidence": [], "next_check": "次回は流入元の画面も確認する。"}
+  ],
+  "candidates": [
+    {"id": "candidate-howto", "title": "振り返りの道具を作る", "reader": "記録を続けたい人", "outcome": "次回に読み直せる記録を1回保存する", "needed": ["実装と動作確認"]}
+  ],
+  "applied_changes": []
+}
